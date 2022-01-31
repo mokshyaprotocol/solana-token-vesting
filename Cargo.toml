@@ -1,6 +1,6 @@
 cargo-features = ["edition2021"]
 [package]
-name = "give_away"
+name = "token_vesting"
 version = "0.1.0"
 edition = "2021"
 

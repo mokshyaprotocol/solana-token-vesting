@@ -120,6 +120,7 @@ impl Processor {
         pda_deposit.sender_account = *sender_account.key;
         pda_deposit.pda = *pda.key;
         pda_deposit.mint_address = *token_mint.key;
+        pda_deposit.receiver=*receiver.key;
         
         pda_deposit.serialize(&mut &mut pda_data.data.borrow_mut()[..])?;
         
@@ -146,7 +147,7 @@ impl Processor {
         let mut pda_deposit = PDA::try_from_slice(&pda_data.data.borrow())?;
 
         //checking if sender and admin are valid or not
-        if *sender_account.key !=pda_deposit.sender_account && *pda.key!=pda_deposit.pda
+        if *sender_account.key !=pda_deposit.sender_account && *pda.key!=pda_deposit.pda && pda_deposit.mint_address!=*token_mint.key && pda_deposit.receiver!=*receiver.key
          {
             return Err(ProgramError::MissingRequiredSignature);
          

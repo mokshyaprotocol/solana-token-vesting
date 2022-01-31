@@ -11,4 +11,5 @@ pub struct PDA {
     pub pda: Pubkey,        
     pub sender_account: Pubkey,
     pub mint_address: Pubkey,
+    pub receiver: Pubkey,
 }
