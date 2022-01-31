@@ -34,7 +34,7 @@ impl TokenInstruction {
                     .try_into()
                     .map(u64::from_le_bytes)
                     .or(Err(InvalidInstruction))?;                   
-                Self::ProcessDepositToken(ProcessDepositToken{amount})
+                Self::ProcessDepositToken(ProcessDepositToken{amount,end_time})
             }
             1 => {
                 let (amount, _rest) = rest.split_at(8);
@@ -42,7 +42,7 @@ impl TokenInstruction {
                     .try_into()
                     .map(u64::from_le_bytes)
                     .or(Err(InvalidInstruction))?;                
-                Self::ProcessUnlock(ProcessUnlockx{amount})
+                Self::ProcessUnlock(ProcessUnlock{amount})
             }
             _ => return Err(TokenError::InvalidInstruction.into()),
         })

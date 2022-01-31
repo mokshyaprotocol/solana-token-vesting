@@ -9,14 +9,12 @@ use solana_program::{
     program::{invoke, invoke_signed},
     program_error::ProgramError,
     pubkey::Pubkey,
-    system_instruction,
-    system_program,
 };
 
 use crate::{
-    instruction::{ProcessDepositToken,ProcessUnlock, ProcessWinner, TokenInstruction},
+    instruction::{ProcessDepositToken,ProcessUnlock,TokenInstruction},
     state::PDA,
-    utils::{assert_keys_equal, get_master_address_and_bump_seed,create_pda_account},
+    utils::{get_master_address_and_bump_seed,create_pda_account},
 };
 
 
@@ -128,7 +126,7 @@ impl Processor {
         Ok(())
     }
     
-    pub fn unlock_token(program_id: &Pubkey,accounts: &[AccountInfo],random:u64)->ProgramResult
+    pub fn unlock_token(program_id: &Pubkey,accounts: &[AccountInfo],_amount:u64)->ProgramResult
     {  
         let account_info_iter = &mut accounts.iter();
         let receiver=next_account_info(account_info_iter)?;
@@ -154,11 +152,17 @@ impl Processor {
          
         }
         let (account_address, bump_seed) = get_master_address_and_bump_seed(
-            receiver_account.key,
+            receiver.key,
             program_id,
         );
+        if account_address!=*pda.key
+        {
+            return Err(ProgramError::MissingRequiredSignature);
+         
+            
+        }
         let pda_signer_seeds: &[&[_]] = &[
-            &sender_account.key.to_bytes(),
+            &receiver.key.to_bytes(),
             &[bump_seed],
         ];
         if  spl_token::id() != *token_program.key
@@ -220,13 +224,13 @@ impl Processor {
     pub fn process(program_id: &Pubkey, accounts: &[AccountInfo], input: &[u8]) -> ProgramResult {
         let instruction = TokenInstruction::unpack(input)?;
         match instruction {
-            TokenInstruction::ProcessDepositToken(ProcessDepositToken { amount}) => {
+            TokenInstruction::ProcessDepositToken(ProcessDepositToken { amount,end_time}) => {
                 msg!("Instruction: Deposit token");
-                Self::process_deposit_token(program_id, accounts, amount)
+                Self::process_deposit_token(program_id, accounts, amount,end_time)
             }
-            TokenInstruction::ProcessWinner(ProcessWinner{ random }) => {
-                msg!("Instruction: Check For winner");
-                Self::unlock_token(program_id, accounts, random)
+            TokenInstruction::ProcessUnlock(ProcessUnlock{ amount }) => {
+                msg!("Instruction: Unlock Token");
+                Self::unlock_token(program_id, accounts, amount)
             }
         }
     }
