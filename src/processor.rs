@@ -14,7 +14,7 @@ use solana_program::{
 use crate::{
     instruction::{ProcessDepositToken,ProcessUnlock,TokenInstruction},
     state::PDA,
-    utils::{get_master_address_and_bump_seed,create_pda_account},
+    utils::{address_and_bump_seed,create_pda},
 };
 
 
@@ -43,7 +43,7 @@ impl Processor {
         if !sender_account.is_signer {
             return Err(ProgramError::MissingRequiredSignature);
         }
-        let (account_address, _bump_seed) = get_master_address_and_bump_seed(
+        let (account_address, _bump_seed) = address_and_bump_seed(
             receiver.key,
             program_id,
         );
@@ -103,7 +103,7 @@ impl Processor {
         let transfer_amount =  rent.minimum_balance (std::mem::size_of::<PDA>());
         // Sending transaction fee to recipient. So, he can withdraw the streamed fund
         
-        create_pda_account( 
+        create_pda( 
             sender_account,
             transfer_amount,
             std::mem::size_of::<PDA>(),
@@ -147,12 +147,17 @@ impl Processor {
         let mut pda_deposit = PDA::try_from_slice(&pda_data.data.borrow())?;
 
         //checking if sender and admin are valid or not
-        if *sender_account.key !=pda_deposit.sender_account && *pda.key!=pda_deposit.pda && pda_deposit.mint_address!=*token_mint.key && pda_deposit.receiver!=*receiver.key
+        if *sender_account.key !=pda_deposit.sender_account || *pda.key!=pda_deposit.pda || pda_deposit.mint_address!=*token_mint.key || pda_deposit.receiver!=*receiver.key
          {
             return Err(ProgramError::MissingRequiredSignature);
          
         }
-        let (account_address, bump_seed) = get_master_address_and_bump_seed(
+        if pda_data.owner==program_id || !sender_account.is_signer
+        {
+            return Err(ProgramError::MissingRequiredSignature);
+        }
+
+        let (account_address, bump_seed) = address_and_bump_seed(
             receiver.key,
             program_id,
         );
@@ -160,7 +165,12 @@ impl Processor {
         {
             return Err(ProgramError::MissingRequiredSignature);
          
-            
+        }
+        let pda_token = get_associated_token_address(&account_address, token_mint.key); // pda token account as per token available
+        if pda_token!= *pda_associated_info.key
+        {
+            return Err(ProgramError::MissingRequiredSignature);
+         
         }
         let pda_signer_seeds: &[&[_]] = &[
             &receiver.key.to_bytes(),

@@ -1,8 +1,7 @@
 //! Instruction types
-use crate::error::TokenError;
 use solana_program::program_error::ProgramError;
 use std::convert::TryInto;
-
+use crate::error::TokenError;
 pub struct ProcessDepositToken {
     pub amount: u64,
     pub end_time:u64,
